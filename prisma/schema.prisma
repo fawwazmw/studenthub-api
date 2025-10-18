@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   Int                @id @default(autoincrement())
+  name                 String
+  email                String             @unique
+  password             String
+  avatarUrl            String?            @map("avatar_url")
+  theme                String             @default("system")
+  notificationsEnabled Boolean            @default(true) @map("notifications_enabled")
+  language             String             @default("en")
+  totalPoints          Int                @default(0) @map("total_points")
+  currentStreak        Int                @default(0) @map("current_streak")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+  
+  notes                Note[]
+  wellbeingEntries     WellbeingEntry[]
+  tasks                Task[]
+  
+  @@map("users")
+}
+
+model Note {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  title         String
+  content       String   @db.Text
+  category      String   // study, personal, reminder, project
+  fileUrl       String?  @map("file_url") // for handwriting notes
+  isHandwriting Boolean  @default(false) @map("is_handwriting")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([category])
+  @@map("notes")
+}
+
+model WellbeingEntry {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  date       DateTime @default(now()) @db.Date
+  mood       Int      // 1-5
+  energy     Int      // 0-5
+  sleep      Int      // 0-5
+  activities String[] // array of activity keys
+  note       String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+  @@map("wellbeing_entries")
+}
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  title       String
+  description String?  @db.Text
+  category    String
+  dueDate     DateTime @map("due_date")
+  isDone      Boolean  @default(false) @map("is_done")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([dueDate])
+  @@map("tasks")
+}
