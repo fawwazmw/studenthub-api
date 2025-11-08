@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const errorMiddleware = require('./middlewares/error.middleware');
 const requestLogger = require('./middlewares/request-logger.middleware');
 
@@ -21,6 +22,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files (uploaded files)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Request logging
 app.use(requestLogger);

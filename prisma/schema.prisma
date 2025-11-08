@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,79 +7,70 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                   Int                @id @default(autoincrement())
-  name                 String
-  email                String             @unique
-  password             String
-  avatarUrl            String?            @map("avatar_url")
-  theme                String             @default("system")
-  notificationsEnabled Boolean            @default(true) @map("notifications_enabled")
-  language             String             @default("en")
-  totalPoints          Int                @default(0) @map("total_points")
-  currentStreak        Int                @default(0) @map("current_streak")
-  createdAt            DateTime           @default(now()) @map("created_at")
-  updatedAt            DateTime           @updatedAt @map("updated_at")
-  
-  notes                Note[]
-  wellbeingEntries     WellbeingEntry[]
-  tasks                Task[]
-  
-  @@map("users")
-}
+model notes {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  title          String
+  content        String
+  category       String
+  file_url       String?
+  is_handwriting Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime
+  users          users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-model Note {
-  id            Int      @id @default(autoincrement())
-  userId        Int      @map("user_id")
-  title         String
-  content       String   @db.Text
-  category      String   // study, personal, reminder, project
-  fileUrl       String?  @map("file_url") // for handwriting notes
-  isHandwriting Boolean  @default(false) @map("is_handwriting")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-  
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([userId])
   @@index([category])
-  @@map("notes")
+  @@index([user_id])
 }
 
-model WellbeingEntry {
-  id         Int      @id @default(autoincrement())
-  userId     Int      @map("user_id")
-  date       DateTime @default(now()) @db.Date
-  mood       Int      // 1-5
-  energy     Int      // 0-5
-  sleep      Int      // 0-5
-  activities String[] // array of activity keys
-  note       String?  @db.Text
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, date])
-  @@index([userId])
-  @@index([date])
-  @@map("wellbeing_entries")
-}
-
-model Task {
+model tasks {
   id          Int      @id @default(autoincrement())
-  userId      Int      @map("user_id")
+  user_id     Int
   title       String
-  description String?  @db.Text
+  description String?
   category    String
-  dueDate     DateTime @map("due_date")
-  isDone      Boolean  @default(false) @map("is_done")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([userId])
-  @@index([dueDate])
-  @@map("tasks")
+  due_date    DateTime
+  is_done     Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([due_date])
+  @@index([user_id])
+}
+
+model users {
+  id                    Int                 @id @default(autoincrement())
+  name                  String
+  email                 String              @unique
+  password              String
+  avatar_url            String?
+  theme                 String              @default("system")
+  notifications_enabled Boolean             @default(true)
+  language              String              @default("en")
+  total_points          Int                 @default(0)
+  current_streak        Int                 @default(0)
+  created_at            DateTime            @default(now())
+  updated_at            DateTime
+  notes                 notes[]
+  tasks                 tasks[]
+  wellbeing_entries     wellbeing_entries[]
+}
+
+model wellbeing_entries {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  date       DateTime @default(now()) @db.Date
+  mood       Int
+  energy     Int
+  sleep      Int
+  activities String[]
+  note       String?
+  created_at DateTime @default(now())
+  updated_at DateTime
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, date])
+  @@index([date])
+  @@index([user_id])
 }

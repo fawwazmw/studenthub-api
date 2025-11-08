@@ -1,4 +1,5 @@
 const notesRepository = require('./notes.repository');
+const { deleteNoteFile } = require('../../utils/note_upload.helper');
 
 const createNote = async (userId, noteData) => {
   return await notesRepository.create({
@@ -51,9 +52,19 @@ const updateNote = async (userId, noteId, noteData) => {
 };
 
 const deleteNote = async (userId, noteId) => {
-  await getNoteById(userId, noteId); // Check ownership
-  
+  const note = await getNoteById(userId, noteId); // Check ownership
+  if (note.fileUrl) {
+    await deleteNoteFile(note.fileUrl);
+  }
   return await notesRepository.delete(noteId);
+};
+
+const attachNoteFile = async (userId, noteId, fileUrl) => {
+  const note = await getNoteById(userId, noteId);
+  if (note.fileUrl && note.fileUrl !== fileUrl) {
+    await deleteNoteFile(note.fileUrl);
+  }
+  return await notesRepository.update(noteId, { fileUrl });
 };
 
 module.exports = {
@@ -62,4 +73,5 @@ module.exports = {
   getNoteById,
   updateNote,
   deleteNote,
+  attachNoteFile,
 };

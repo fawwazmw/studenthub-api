@@ -1,9 +1,30 @@
 const tasksRepository = require('./tasks.repository');
 
+const normalizeDueDate = (dueDate) => {
+  if (!dueDate) {
+    return undefined;
+  }
+
+  if (dueDate instanceof Date) {
+    return dueDate;
+  }
+
+  const parsed = new Date(dueDate);
+  if (Number.isNaN(parsed.getTime())) {
+    const error = new Error('Invalid due date format');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return parsed;
+};
+
 const createTask = async (userId, taskData) => {
+  const { dueDate, ...rest } = taskData;
   return await tasksRepository.create({
     userId,
-    ...taskData,
+    ...rest,
+    ...(dueDate ? { dueDate: normalizeDueDate(dueDate) } : {}),
   });
 };
 
@@ -50,8 +71,13 @@ const getTaskById = async (userId, taskId) => {
 
 const updateTask = async (userId, taskId, taskData) => {
   await getTaskById(userId, taskId); // Check ownership
-  
-  return await tasksRepository.update(taskId, taskData);
+
+  const { dueDate, ...rest } = taskData;
+  if (dueDate !== undefined) {
+    rest.dueDate = normalizeDueDate(dueDate);
+  }
+
+  return await tasksRepository.update(taskId, rest);
 };
 
 const toggleTaskStatus = async (userId, taskId) => {

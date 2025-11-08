@@ -57,10 +57,29 @@ const deleteNote = async (req, res, next) => {
   }
 };
 
+const uploadNoteFile = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const noteId = parseInt(req.params.id);
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded',
+      });
+    }
+    const fileUrl = `/uploads/notes/${req.file.filename}`;
+    const note = await notesService.attachNoteFile(userId, noteId, fileUrl);
+    return successResponse(res, 'Note file uploaded successfully', note);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createNote,
   getAllNotes,
   getNoteById,
   updateNote,
   deleteNote,
+  uploadNoteFile,
 };
